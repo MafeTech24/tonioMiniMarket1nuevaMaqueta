@@ -28,7 +28,7 @@ const Horarios = () => (
             <Phone size={28} className="text-primary shrink-0 mt-1" />
             <div>
               <h3 className="font-heading text-lg font-bold text-foreground">Teléfono / WhatsApp</h3>
-              <p className="font-body text-muted-foreground">351 2005107</p>
+              <p className="font-body text-muted-foreground">3516527241</p>
             </div>
           </div>
         </div>

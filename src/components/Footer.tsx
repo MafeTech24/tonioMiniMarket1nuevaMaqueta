@@ -38,7 +38,7 @@ const Footer = () => (
             Contacto
           </h4>
           <p className="font-body text-sm text-footer-foreground/70">Falucho 275, Bº Las Palmas, Córdoba Capital</p>
-          <p className="font-body text-sm text-footer-foreground/70 mt-1">WhatsApp: 351 6527241</p>
+          <p className="font-body text-sm text-footer-foreground/70 mt-1">WhatsApp: 3516527241</p>
           <a
             href="https://wa.me/5493512005107"
             target="_blank"

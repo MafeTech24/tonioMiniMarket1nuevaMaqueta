@@ -37,7 +37,9 @@ export const Cart = () => {
     name: '',
     phone: '',
     deliveryMethod: 'Delivery' as 'Delivery' | 'Retiro en local',
-    address: '',
+    street: '',
+    floor: '',
+    neighborhood: '',
     paymentMethod: 'Efectivo' as 'Efectivo' | 'Transferencia',
     notes: ''
   });
@@ -49,7 +51,7 @@ export const Cart = () => {
   const [formErrors, setFormErrors] = useState<{
     name?: string;
     phone?: string;
-    address?: string;
+    street?: string;
     general?: string;
   }>({});
 
@@ -58,8 +60,8 @@ export const Cart = () => {
   };
 
   const handleCalculateShipping = async () => {
-    if (!formData.address.trim()) {
-      setFormErrors(prev => ({ ...prev, address: "Por favor ingresá tu dirección" }));
+    if (!formData.street.trim()) {
+      setFormErrors(prev => ({ ...prev, street: "Por favor ingresá tu calle y número" }));
       return;
     }
     
@@ -69,7 +71,9 @@ export const Cart = () => {
     setDeliveryDistance(null);
     
     try {
-      const query = `${formData.address}, Córdoba, Argentina`;
+      const query = formData.neighborhood
+        ? `${formData.street}, ${formData.neighborhood}, Córdoba, Argentina`
+        : `${formData.street}, Córdoba, Argentina`;
       const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -106,12 +110,12 @@ export const Cart = () => {
     if (formData.phone.replace(/\D/g, '').length < 10) errors.phone = "El teléfono necesita al menos 10 números";
     
     if (formData.deliveryMethod === 'Delivery') {
-      if (!formData.address.trim()) errors.address = "Escribí tu dirección de entrega";
+      if (!formData.street.trim()) errors.street = "Escribí tu calle y número";
       
       if (geoError && deliveryDistance && deliveryDistance > 10) {
         errors.general = "No podemos enviar a tu zona. Por favor elegí Retiro en local.";
       } else if (deliveryCost === null && !geoError) {
-         errors.address = "Por favor calculá el costo de envío";
+         errors.street = "Por favor calculá el costo de envío";
       }
     }
     
@@ -155,6 +159,10 @@ export const Cart = () => {
       ? `Envío: ${deliveryCost === 0 ? `Gratis (${deliveryDistance} km)` : `${formatTotal(deliveryCost!)} (${deliveryDistance} km)`}`
       : `Retiro en local`;
 
+    const fullAddress = [formData.street, formData.floor, formData.neighborhood]
+      .filter(Boolean)
+      .join(', ');
+
     const commonMessage = `*Pedido Tonio MiniMarket*
 ─────────────────────
 ${itemsText}
@@ -163,7 +171,7 @@ Subtotal: ${formatTotal(total)}
 ${enviosText}
 *TOTAL: ${formatTotal(grandTotal)}*
 ─────────────────────
-Dirección de entrega: ${formData.deliveryMethod === 'Delivery' ? formData.address : 'Retiro en local'}`;
+Dirección de entrega: ${formData.deliveryMethod === 'Delivery' ? fullAddress : 'Retiro en local'}`;
 
     const ownerMessage = `🛒 *NUEVO PEDIDO #${orderNumber}*
 📅 ${currentDateTime}
@@ -223,7 +231,7 @@ ${commonMessage}
       setGeoError(null);
       setFormErrors({});
       setFormData({
-        name: '', phone: '', deliveryMethod: 'Delivery', address: '', paymentMethod: 'Efectivo', notes: ''
+        name: '', phone: '', deliveryMethod: 'Delivery', street: '', floor: '', neighborhood: '', paymentMethod: 'Efectivo', notes: ''
       });
     }, 300);
   };
@@ -285,7 +293,9 @@ ${commonMessage}
             {formData.deliveryMethod === 'Delivery' && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b' }}>Dirección:</span>
-                <span style={{ fontWeight: 'bold', textAlign: 'right', maxWidth: '60%' }}>{formData.address}</span>
+                <span style={{ fontWeight: 'bold', textAlign: 'right', maxWidth: '60%' }}>
+                  {[formData.street, formData.floor, formData.neighborhood].filter(Boolean).join(', ')}
+                </span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -456,7 +466,7 @@ ${commonMessage}
                         setGeoError(null);
                         setDeliveryCost(null);
                         setDeliveryDistance(null);
-                        setFormErrors(prev => ({...prev, address: undefined, general: undefined}));
+                        setFormErrors(prev => ({...prev, street: undefined, general: undefined}));
                     }} 
                     className={`min-h-[52px] text-[16px] rounded-md border font-bold transition-all ${formData.deliveryMethod === 'Retiro en local' ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-background text-foreground/80 hover:bg-secondary/10'}`}
                   >
@@ -467,32 +477,61 @@ ${commonMessage}
 
               {formData.deliveryMethod === 'Delivery' && (
                 <div className="flex flex-col gap-4 p-5 bg-secondary/5 rounded-xl border border-secondary/10 mt-2">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[16px] font-bold">Dirección de entrega *</label>
-                    <div className="flex gap-2">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[16px] font-bold">Calle y número *</label>
                       <input 
                         type="text" 
-                        className={`flex-1 px-[14px] py-[14px] text-[16px] border ${formErrors.address ? 'border-red-500' : 'border-border'} rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50`} 
-                        placeholder="Ej: Av. Colón 1234, Córdoba" 
-                        value={formData.address} 
+                        className={`px-[14px] py-[14px] text-[16px] border ${formErrors.street ? 'border-red-500' : 'border-border'} rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50`} 
+                        placeholder="Ej: San Martín 423" 
+                        value={formData.street} 
                         onChange={(e) => {
-                            setFormData({...formData, address: e.target.value});
-                            setFormErrors({...formErrors, address: undefined, general: undefined});
+                            setFormData({...formData, street: e.target.value});
+                            setFormErrors({...formErrors, street: undefined, general: undefined});
                             setDeliveryCost(null);
                             setDeliveryDistance(null);
                             setGeoError(null);
                         }} 
                       />
-                      <button 
-                        type="button"
-                        onClick={handleCalculateShipping}
-                        className="bg-primary text-white px-4 py-2 rounded-md font-bold text-sm hover:bg-[#b30000] transition-colors disabled:opacity-50"
-                        disabled={isCalculatingDistance}
-                      >
-                        {isCalculatingDistance ? '...' : 'Calcular envío'}
-                      </button>
+                      {formErrors.street && <span className="text-red-500 text-sm leading-tight">{formErrors.street}</span>}
                     </div>
-                    {formErrors.address && <span className="text-red-500 text-sm leading-tight">{formErrors.address}</span>}
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[16px] font-bold">Piso / Depto (opcional)</label>
+                      <input 
+                        type="text" 
+                        className="px-[14px] py-[14px] text-[16px] border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                        placeholder="Ej: Piso 7 Dpto B" 
+                        value={formData.floor} 
+                        onChange={(e) => setFormData({...formData, floor: e.target.value})} 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[16px] font-bold">Barrio (opcional, mejora la precisión)</label>
+                      <input 
+                        type="text" 
+                        className="px-[14px] py-[14px] text-[16px] border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                        placeholder="Ej: Nueva Córdoba" 
+                        value={formData.neighborhood} 
+                        onChange={(e) => {
+                          setFormData({...formData, neighborhood: e.target.value});
+                          // Reset distance calculation since neighborhood affects geocoding
+                          setDeliveryCost(null);
+                          setDeliveryDistance(null);
+                          setGeoError(null);
+                        }} 
+                      />
+                    </div>
+
+                    <button 
+                      type="button"
+                      onClick={handleCalculateShipping}
+                      className="w-full bg-primary text-white px-4 py-3 rounded-md font-bold text-base hover:bg-[#b30000] transition-colors disabled:opacity-50"
+                      disabled={isCalculatingDistance || !formData.street.trim()}
+                    >
+                      {isCalculatingDistance ? 'Calculando...' : 'Calcular envío'}
+                    </button>
                   </div>
                   
                   <div className="mt-2 flex flex-col gap-3">
@@ -623,7 +662,9 @@ ${commonMessage}
                     <span className="text-sm text-muted-foreground font-bold">Método y Dirección</span>
                     <span className="font-bold text-lg">{formData.deliveryMethod}</span>
                     {formData.deliveryMethod === 'Delivery' && (
-                        <span className="font-semibold text-muted-foreground">{formData.address}</span>
+                        <span className="font-semibold text-muted-foreground">
+                          {[formData.street, formData.floor, formData.neighborhood].filter(Boolean).join(', ')}
+                        </span>
                     )}
                   </div>
                   
