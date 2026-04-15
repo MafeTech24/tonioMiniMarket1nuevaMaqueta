@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%; /* #FAFAFA */
+    --foreground: 0 0% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+    --primary: 0 100% 40%; /* #CC0000 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 122 46% 33%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 98%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 45 100% 90%;
+    --accent-foreground: 0 0% 13%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%; /* #e0e0e0 approx */
+    --input: 0 0% 88%;
+    --ring: 0 100% 40%;
+    --radius: 0.5rem;
+
+    --navbar: 0 100% 40%;
+    --navbar-foreground: 0 0% 100%;
+    --offer-bg: 0 100% 97%;
+    --offer-badge: 0 100% 40%;
+    --section-alt: 0 0% 98%; /* #FAFAFA */
+    --footer-bg: 0 0% 10%;
+    --footer-foreground: 0 0% 100%;
+    --whatsapp: 142 70% 49%;
+    --trust-bg: 122 46% 33%;
+    --trust-foreground: 0 0% 100%;
+
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-card-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-[#FAFAFA] text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading uppercase;
+  }
+}
+
+@layer components {
+  .badge-category {
+    @apply inline-block bg-[#E8F5E9] text-[#2E7D32] text-[12px] font-semibold px-2 py-0.5 rounded-[4px];
+  }
+  .badge-offer {
+    @apply inline-block bg-primary text-primary-foreground font-heading text-sm font-bold px-3 py-1 rounded-sm;
+    transform: rotate(-3deg);
+  }
+  .card-market {
+    @apply bg-white rounded-lg overflow-hidden border border-[#e0e0e0] transition-all duration-300;
+    box-shadow: var(--shadow-card);
+  }
+  .card-market:hover {
+    box-shadow: var(--shadow-card-hover);
+    @apply border-[#cccccc];
+  }
+  .btn-market {
+    @apply min-h-[44px] inline-flex items-center justify-center gap-2 px-6 py-2 rounded-md font-bold transition-all duration-200 active:scale-95;
+  }
+  .btn-primary-market {
+    @apply btn-market bg-[#CC0000] text-white hover:bg-[#b30000] shadow-sm;
+  }
+  .btn-outline-red {
+    @apply btn-market bg-transparent border-[1.5px] border-[#CC0000] text-[#CC0000] rounded-[6px] hover:bg-[#CC0000] hover:text-white;
+  }
+  .btn-whatsapp {
+    @apply btn-market bg-secondary text-secondary-foreground px-8 hover:brightness-110;
+  }
+  .section-wave {
+    @apply w-full h-12 md:h-20;
+  }
+  .pill-active {
+    @apply bg-primary text-primary-foreground;
+  }
+  .pill-inactive {
+    @apply bg-muted text-muted-foreground hover:bg-primary/10;
+  }
+  
+  .nav-link {
+    @apply relative border-b-2 border-transparent transition-all duration-200 py-1;
+  }
+  .nav-link:hover {
+    border-bottom: 2px solid rgba(255,255,255,0.7);
+  }
+  .nav-link-active {
+    border-bottom: 2px solid #FFFFFF;
+  }
+}
