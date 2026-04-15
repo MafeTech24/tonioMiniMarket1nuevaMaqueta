@@ -3,7 +3,7 @@ const Footer = () => (
     {/* Green top bar */}
     <div className="h-2 bg-secondary" />
     <div className="container mx-auto px-4 py-10">
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
         {/* Brand */}
         <div>
           <a href="#inicio" className="block w-fit group">
@@ -38,9 +38,9 @@ const Footer = () => (
             Contacto
           </h4>
           <p className="font-body text-sm text-footer-foreground/70">Falucho 275, Bº Las Palmas, Córdoba Capital</p>
-          <p className="font-body text-sm text-footer-foreground/70 mt-1">WhatsApp: 3516 527241</p>
+          <p className="font-body text-sm text-footer-foreground/70 mt-1">WhatsApp: 351 2005107</p>
           <a
-            href="https://wa.me/5493516527241"
+            href="https://wa.me/5493512005107"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block mt-3 font-heading text-sm font-bold text-secondary hover:underline"

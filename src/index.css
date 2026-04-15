@@ -46,9 +46,15 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+  html {
+    overflow-x: hidden;
   }
   body {
     @apply bg-[#FAFAFA] text-foreground font-body antialiased;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading uppercase;

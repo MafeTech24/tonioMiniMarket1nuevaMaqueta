@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 
 // Pollería nuevos
@@ -11,6 +18,9 @@ import imgPataMusloNew from "../assets/products/pataMuslo.png";
 import imgPataPollo from "../assets/products/pataPollo.png";
 import imgPechugas from "../assets/products/pechugasdePollo.png";
 import imgPolloEnteroNew from "../assets/products/polloEntero.png";
+import imgPromoTarta1 from "../assets/products/promoTarta1.png";
+import imgPromoTarta2 from "../assets/products/promoTarta2.png";
+import imgPromoTarta3 from "../assets/products/promoTarta3.png";
 
 // Lácteos
 import imgYogurTregar from "../assets/products/yogurTregarLitro.png";
@@ -77,7 +87,8 @@ interface Producto {
   precio: string;
   categoria: Categoria;
   desc: string;
-  img: string;
+  img?: string;
+  images?: string[];
   stockNumber?: number;
   stock?: boolean;
 }
@@ -205,15 +216,29 @@ const Catalogo = () => {
         </div>
 
         {/* Cards Compactas Niv.1 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
           {filtered.map((p) => (
             <div 
               key={p.nombre} 
               className="bg-white rounded-[12px] overflow-hidden cursor-pointer group hover:shadow-md transition-all border border-[#e0e0e0] flex flex-col h-full"
               onClick={() => setSelectedProduct(p)}
             >
-              <div className="w-full aspect-square bg-[#FAFAFA] p-[12px] flex items-center justify-center">
-                <img src={p.img} alt={p.nombre} className="w-full h-full object-contain transition-transform group-hover:scale-[1.03]" loading="lazy" />
+              <div className="w-full aspect-square bg-[#FAFAFA] p-[12px] flex items-center justify-center relative overflow-hidden">
+                {p.images ? (
+                  <Carousel className="w-full h-full">
+                    <CarouselContent className="h-full">
+                      {p.images.map((img, idx) => (
+                        <CarouselItem key={idx} className="h-full flex items-center justify-center">
+                          <img src={img} alt={p.nombre} className="w-full h-full object-contain transition-transform group-hover:scale-[1.03]" />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50" />
+                    <CarouselNext className="right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50" />
+                  </Carousel>
+                ) : (
+                  <img src={p.img} alt={p.nombre} className="w-full h-full object-contain transition-transform group-hover:scale-[1.03]" loading="lazy" />
+                )}
               </div>
               <div className="p-4 flex flex-col flex-1 text-center items-center justify-center border-t border-[#f0f0f0]">
                 <span className="badge-category mb-2">
@@ -232,7 +257,7 @@ const Catalogo = () => {
       {selectedProduct && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setSelectedProduct(null)} />
-          <div className="relative bg-white w-full max-w-[95%] md:max-w-4xl rounded-[12px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+          <div className="relative bg-white w-full max-w-[98%] sm:max-w-[90%] md:max-w-4xl rounded-[12px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[92vh] md:max-h-[85vh]">
             <button 
               onClick={() => setSelectedProduct(null)} 
               className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur rounded-full hover:bg-white transition-colors border shadow-sm text-gray-700"
@@ -242,12 +267,26 @@ const Catalogo = () => {
             </button>
             
             {/* Image Col */}
-            <div className="w-full md:w-1/2 bg-[#FAFAFA] p-[12px] flex items-center justify-center min-h-[300px] md:min-h-0 border-b md:border-b-0 md:border-r border-[#e0e0e0]">
-              <img src={selectedProduct.img} alt={selectedProduct.nombre} className="w-full h-full object-contain" />
+            <div className="w-full md:w-1/2 bg-[#FAFAFA] p-[12px] flex items-center justify-center min-h-[200px] sm:min-h-[260px] md:min-h-0 border-b md:border-b-0 md:border-r border-[#e0e0e0] max-h-[40vh] md:max-h-none relative">
+              {selectedProduct.images ? (
+                <Carousel className="w-full h-full">
+                  <CarouselContent>
+                    {selectedProduct.images.map((img, idx) => (
+                      <CarouselItem key={idx} className="flex items-center justify-center">
+                        <img src={img} alt={selectedProduct.nombre} className="w-full h-full object-contain max-h-[36vh] md:max-h-none" />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-4 bg-white/70 hover:bg-white" />
+                  <CarouselNext className="right-4 bg-white/70 hover:bg-white" />
+                </Carousel>
+              ) : (
+                <img src={selectedProduct.img} alt={selectedProduct.nombre} className="w-full h-full object-contain max-h-[36vh] md:max-h-none" />
+              )}
             </div>
             
             {/* Info Col */}
-            <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col overflow-y-auto">
+            <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-10 flex flex-col overflow-y-auto">
               <div className="flex-1">
                 <span className="badge-category mb-4 inline-block">
                   {selectedProduct.categoria}

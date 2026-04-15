@@ -38,7 +38,7 @@ El proyecto está creado utilizando [Vite](https://vitejs.dev/) y [React](https:
 ## 📍 Contacto Comercial
 
 - **Dirección:** Falucho 275, Bº Las Palmas. Córdoba Capital, Argentina.
-- **WhatsApp Oficial:** +54 9 3516 52-7241
+- **WhatsApp Oficial:** +54 9 3512 00-5107
 
 
 - **Sitio Realizado por:** MafeTech

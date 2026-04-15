@@ -98,13 +98,13 @@ export const Cart = () => {
         setDeliveryDistance(distRounded);
         if (dist <= 2) {
           setDeliveryCost(0);
-        } else if (dist <= 6) {
+        } else if (dist <= 10) {
           // $250 per km, charged for total distance rounded up to nearest 0.1km
           const cost = Math.ceil(dist) * 250;
           setDeliveryCost(cost);
         } else {
           setDeliveryCost(null);
-          setGeoError("Lo sentimos, por ahora no llegamos a tu zona. Podés retirar en el local.");
+          setGeoError("Lo sentimos, por ahora solo llegamos hasta 10km a la redonda. Podés retirar en el local.");
         }
       } else {
         setDeliveryCost(null);
