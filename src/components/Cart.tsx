@@ -5,8 +5,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescri
 import { useCart } from "@/context/CartContext";
 
 const OWNER_PHONE = "5493512005107";
-const STORE_LAT = -31.4028247;
-const STORE_LON = -64.2447978;
+const STORE_LAT = -31.4028;
+const STORE_LON = -64.2422;
 
 const formatTotal = (num: number) => {
   return "$" + num.toLocaleString("es-AR");
@@ -37,9 +37,7 @@ export const Cart = () => {
     name: '',
     phone: '',
     deliveryMethod: 'Delivery' as 'Delivery' | 'Retiro en local',
-    street: '',
-    number: '',
-    neighborhood: '',
+    address: '',
     paymentMethod: 'Efectivo' as 'Efectivo' | 'Transferencia',
     notes: ''
   });
@@ -51,9 +49,7 @@ export const Cart = () => {
   const [formErrors, setFormErrors] = useState<{
     name?: string;
     phone?: string;
-    street?: string;
-    number?: string;
-    neighborhood?: string;
+    address?: string;
     general?: string;
   }>({});
 
@@ -61,58 +57,44 @@ export const Cart = () => {
     setStep('form');
   };
 
-  const handleAddressBlur = async () => {
-    if (formData.deliveryMethod !== 'Delivery') return;
-    if (!formData.street.trim() || !formData.number.trim() || !formData.neighborhood.trim()) return;
+  const handleCalculateShipping = async () => {
+    if (!formData.address.trim()) {
+      setFormErrors(prev => ({ ...prev, address: "Por favor ingresá tu dirección" }));
+      return;
+    }
     
     setIsCalculatingDistance(true);
     setGeoError(null);
-    setFormErrors(prev => ({ ...prev, general: undefined }));
+    setDeliveryCost(null);
+    setDeliveryDistance(null);
     
     try {
-      const query = `${formData.street} ${formData.number}, ${formData.neighborhood}, Córdoba`;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ar`;
+      const query = `${formData.address}, Córdoba, Argentina`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
       const res = await fetch(url);
       const data = await res.json();
       
-      let lat, lon;
-
       if (data && data.length > 0) {
-        lat = parseFloat(data[0].lat);
-        lon = parseFloat(data[0].lon);
-      } else {
-        const fallbackQuery = `${formData.street}, ${formData.neighborhood}, Córdoba`;
-        const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&countrycodes=ar`;
-        const fallbackRes = await fetch(fallbackUrl);
-        const fallbackData = await fallbackRes.json();
-        
-        if (fallbackData && fallbackData.length > 0) {
-          lat = parseFloat(fallbackData[0].lat);
-          lon = parseFloat(fallbackData[0].lon);
-        }
-      }
-
-      if (lat && lon) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
         const dist = calculateDistance(STORE_LAT, STORE_LON, lat, lon);
-        const distRounded = Math.round(dist * 10) / 10; // 1 decimal
+        const distRounded = Math.round(dist * 10) / 10;
         setDeliveryDistance(distRounded);
-        if (dist <= 2) {
+        
+        if (distRounded <= 2) {
           setDeliveryCost(0);
-        } else if (dist <= 10) {
-          // $250 per km, charged for total distance rounded up to nearest 0.1km
-          const cost = Math.ceil(dist) * 250;
+        } else if (distRounded <= 10) {
+          const cost = Math.round((distRounded - 2) * 250);
           setDeliveryCost(cost);
         } else {
           setDeliveryCost(null);
-          setGeoError("Lo sentimos, por ahora solo llegamos hasta 10km a la redonda. Podés retirar en el local.");
+          setGeoError("Lo sentimos, por ahora no llegamos a tu zona. Podés retirar en Falucho 275, Bº Las Palmas.");
         }
       } else {
-        setDeliveryCost(null);
-        setGeoError("No pudimos encontrar la dirección exacta. Asegurate de que esté bien escrita o elegí retirar en local.");
+        setGeoError("⚠️ No encontramos esa dirección. Intentá con calle y número más el barrio.");
       }
     } catch(e) {
-      setDeliveryCost(null);
-      setGeoError("Hubo un error calculando el costo de envío. Intentá de nuevo.");
+      setGeoError("Hubo un error calculando el envío. Intentá de nuevo.");
     } finally {
       setIsCalculatingDistance(false);
     }
@@ -124,15 +106,12 @@ export const Cart = () => {
     if (formData.phone.replace(/\D/g, '').length < 10) errors.phone = "El teléfono necesita al menos 10 números";
     
     if (formData.deliveryMethod === 'Delivery') {
-      if (!formData.street.trim()) errors.street = "Escribí la calle donde querés recibir tu pedido";
-      if (!formData.number.trim()) errors.number = "Falta el número de tu domicilio";
-      if (!formData.neighborhood.trim()) errors.neighborhood = "Escribí tu barrio";
+      if (!formData.address.trim()) errors.address = "Escribí tu dirección de entrega";
       
-      if (geoError) {
-        errors.general = "No podemos enviar a tu zona. Por favor cambiá la dirección o elegí Retiro en local.";
-      } else if (deliveryCost === null) {
-         // Force calculation if user managed to skip blur
-         errors.general = "Estamos calculando el envío. Asegurate de escribir la dirección completa y tocar afuera del campo de texto.";
+      if (geoError && deliveryDistance && deliveryDistance > 10) {
+        errors.general = "No podemos enviar a tu zona. Por favor elegí Retiro en local.";
+      } else if (deliveryCost === null && !geoError) {
+         errors.address = "Por favor calculá el costo de envío";
       }
     }
     
@@ -172,21 +151,25 @@ export const Cart = () => {
     const currentDateTime = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
     let itemsText = cart.map((item) => `- ${item.nombre} x${item.cantidad} — $${(item.precio * item.cantidad).toLocaleString('es-AR')}`).join('\n');
 
-    const addressText = formData.deliveryMethod === 'Delivery' 
-      ? `${formData.street} ${formData.number}, ${formData.neighborhood}` 
-      : 'Retiro en local';
-      
-    const enviosText = formData.deliveryMethod === 'Delivery' ? `Envío (Delivery): ${deliveryCost === 0 ? 'Gratis' : formatTotal(deliveryCost!)}` : `Retiro en local`;
+    const enviosText = formData.deliveryMethod === 'Delivery' 
+      ? `Envío: ${deliveryCost === 0 ? `Gratis (${deliveryDistance} km)` : `${formatTotal(deliveryCost!)} (${deliveryDistance} km)`}`
+      : `Retiro en local`;
+
+    const commonMessage = `*Pedido Tonio MiniMarket*
+─────────────────────
+${itemsText}
+─────────────────────
+Subtotal: ${formatTotal(total)}
+${enviosText}
+*TOTAL: ${formatTotal(grandTotal)}*
+─────────────────────
+Dirección de entrega: ${formData.deliveryMethod === 'Delivery' ? formData.address : 'Retiro en local'}`;
 
     const ownerMessage = `🛒 *NUEVO PEDIDO #${orderNumber}*
 📅 ${currentDateTime}
 
-*Productos:*
-${itemsText}
-📦 *${enviosText}*
+${commonMessage}
 
-💰 *Total: ${formatTotal(grandTotal)}*
-📍 *Domicilio:* ${addressText}
 💳 *Pago:* ${formData.paymentMethod}
 👤 *Cliente:* ${formData.name}
 📱 *Teléfono:* ${formData.phone}
@@ -195,11 +178,8 @@ ${itemsText}
     const customerMessage = `✅ *¡Pedido confirmado! #${orderNumber}*
 Hola ${formData.name}, recibimos tu pedido correctamente.
 
-*Productos:*
-${itemsText}
-📦 *${enviosText}*
+${commonMessage}
 
-💰 *Total: ${formatTotal(grandTotal)}*
 💳 *Pago:* ${formData.paymentMethod}
 📝 *Notas:* ${formData.notes || "Sin notas"}
 
@@ -243,7 +223,7 @@ ${itemsText}
       setGeoError(null);
       setFormErrors({});
       setFormData({
-        name: '', phone: '', deliveryMethod: 'Delivery', street: '', number: '', neighborhood: '', paymentMethod: 'Efectivo', notes: ''
+        name: '', phone: '', deliveryMethod: 'Delivery', address: '', paymentMethod: 'Efectivo', notes: ''
       });
     }, 300);
   };
@@ -284,7 +264,7 @@ ${itemsText}
               ))}
               {formData.deliveryMethod === 'Delivery' && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', color: '#64748b' }}>
-                  <span style={{ flex: 1, paddingRight: '12px' }}>Costo de envío</span>
+                  <span style={{ flex: 1, paddingRight: '12px' }}>Envío ({deliveryDistance} km)</span>
                   <span style={{ fontWeight: 'bold' }}>{deliveryCost === 0 ? 'Gratis' : (deliveryCost ? formatTotal(deliveryCost) : '-')}</span>
                 </div>
               )}
@@ -305,7 +285,7 @@ ${itemsText}
             {formData.deliveryMethod === 'Delivery' && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b' }}>Dirección:</span>
-                <span style={{ fontWeight: 'bold', textAlign: 'right', maxWidth: '60%' }}>{formData.street} {formData.number}, {formData.neighborhood}</span>
+                <span style={{ fontWeight: 'bold', textAlign: 'right', maxWidth: '60%' }}>{formData.address}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -476,7 +456,7 @@ ${itemsText}
                         setGeoError(null);
                         setDeliveryCost(null);
                         setDeliveryDistance(null);
-                        setFormErrors(prev => ({...prev, street: undefined, number: undefined, neighborhood: undefined, general: undefined}));
+                        setFormErrors(prev => ({...prev, address: undefined, general: undefined}));
                     }} 
                     className={`min-h-[52px] text-[16px] rounded-md border font-bold transition-all ${formData.deliveryMethod === 'Retiro en local' ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-background text-foreground/80 hover:bg-secondary/10'}`}
                   >
@@ -486,71 +466,83 @@ ${itemsText}
               </div>
 
               {formData.deliveryMethod === 'Delivery' && (
-                <div className="flex flex-col gap-5 p-5 bg-secondary/5 rounded-xl border border-secondary/10 mt-2">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex flex-col gap-2 w-full sm:w-[65%]">
-                      <label className="text-[16px] font-bold">Calle *</label>
+                <div className="flex flex-col gap-4 p-5 bg-secondary/5 rounded-xl border border-secondary/10 mt-2">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[16px] font-bold">Dirección de entrega *</label>
+                    <div className="flex gap-2">
                       <input 
                         type="text" 
-                        onBlur={handleAddressBlur}
-                        className={`px-[14px] py-[14px] text-[16px] border ${formErrors.street ? 'border-red-500' : 'border-border'} rounded-md focus:outline-none`} 
-                        placeholder="San Martín" 
-                        value={formData.street} 
+                        className={`flex-1 px-[14px] py-[14px] text-[16px] border ${formErrors.address ? 'border-red-500' : 'border-border'} rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50`} 
+                        placeholder="Ej: Av. Colón 1234, Córdoba" 
+                        value={formData.address} 
                         onChange={(e) => {
-                            setFormData({...formData, street: e.target.value});
-                            setFormErrors({...formErrors, street: undefined, general: undefined});
+                            setFormData({...formData, address: e.target.value});
+                            setFormErrors({...formErrors, address: undefined, general: undefined});
+                            setDeliveryCost(null);
+                            setDeliveryDistance(null);
+                            setGeoError(null);
                         }} 
                       />
-                      {formErrors.street && <span className="text-red-500 text-sm leading-tight">{formErrors.street}</span>}
+                      <button 
+                        type="button"
+                        onClick={handleCalculateShipping}
+                        className="bg-primary text-white px-4 py-2 rounded-md font-bold text-sm hover:bg-[#b30000] transition-colors disabled:opacity-50"
+                        disabled={isCalculatingDistance}
+                      >
+                        {isCalculatingDistance ? '...' : 'Calcular envío'}
+                      </button>
                     </div>
-                    <div className="flex flex-col gap-2 w-full sm:w-[35%]">
-                      <label className="text-[16px] font-bold">Número *</label>
-                      <input 
-                        type="text" 
-                        inputMode="numeric"
-                        onBlur={handleAddressBlur}
-                        className={`px-[14px] py-[14px] text-[16px] border ${formErrors.number ? 'border-red-500' : 'border-border'} rounded-md focus:outline-none`} 
-                        placeholder="123" 
-                        value={formData.number} 
-                        onChange={(e) => {
-                            setFormData({...formData, number: e.target.value});
-                            setFormErrors({...formErrors, number: undefined, general: undefined});
-                        }} 
-                      />
-                      {formErrors.number && <span className="text-red-500 text-sm leading-tight">{formErrors.number}</span>}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 w-full">
-                    <label className="text-[16px] font-bold">Barrio *</label>
-                    <input 
-                      type="text" 
-                      onBlur={handleAddressBlur}
-                      className={`px-[14px] py-[14px] text-[16px] border ${formErrors.neighborhood ? 'border-red-500' : 'border-border'} rounded-md focus:outline-none`} 
-                      placeholder="Centro" 
-                      value={formData.neighborhood} 
-                      onChange={(e) => {
-                          setFormData({...formData, neighborhood: e.target.value});
-                          setFormErrors({...formErrors, neighborhood: undefined, general: undefined});
-                      }} 
-                    />
-                    {formErrors.neighborhood && <span className="text-red-500 text-sm leading-tight">{formErrors.neighborhood}</span>}
+                    {formErrors.address && <span className="text-red-500 text-sm leading-tight">{formErrors.address}</span>}
                   </div>
                   
-                  <div className="mt-2 pt-4 border-t border-secondary/20 flex flex-col gap-2">
-                     {isCalculatingDistance && <span className="text-muted-foreground font-semibold flex items-center gap-2"><MapPin size={18} className="animate-bounce" /> Calculando distancia...</span>}
-                     {!isCalculatingDistance && geoError && <span className="text-red-600 font-semibold">{geoError}</span>}
-                     {!isCalculatingDistance && deliveryCost !== null && !geoError && (
-                       <div className="flex flex-col gap-1">
-                         <span className="text-muted-foreground text-sm">
-                           Distancia estimada: <strong>{deliveryDistance} km</strong>
+                  <div className="mt-2 flex flex-col gap-3">
+                     {isCalculatingDistance && <span className="text-muted-foreground font-semibold flex items-center gap-2"><MapPin size={18} className="animate-bounce" /> Buscando dirección...</span>}
+                     
+                     {!isCalculatingDistance && geoError && (
+                       <div className="p-3 rounded-lg border border-red-100 bg-red-50/30">
+                         {deliveryDistance && deliveryDistance > 10 && (
+                           <span className="text-[#888888] font-bold block mb-1">📍 Distancia: {deliveryDistance} km</span>
+                         )}
+                         <span className={`${deliveryDistance && deliveryDistance > 10 ? 'text-[#888888]' : 'text-[#E65100]'} font-semibold`}>
+                           {geoError}
                          </span>
-                         <span className={`font-extrabold text-lg flex items-center gap-2 ${deliveryCost === 0 ? 'text-green-600' : 'text-amber-600'}`}>
+                       </div>
+                     )}
+
+                     {!isCalculatingDistance && deliveryCost !== null && !geoError && (
+                       <div className={`p-4 rounded-xl border ${deliveryCost === 0 ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'}`}>
+                         <span className={`block text-sm font-bold mb-1 ${deliveryCost === 0 ? 'text-[#2E7D32]' : 'text-[#CC0000]'}`}>
+                           📍 Distancia: {deliveryDistance} km
+                         </span>
+                         <span className={`font-extrabold text-lg flex items-center gap-2 ${deliveryCost === 0 ? 'text-[#2E7D32]' : 'text-[#CC0000]'}`}>
                            {deliveryCost === 0
-                             ? '✓ Envío gratis (dentro de los 2km)'
-                             : `🚴 Costo de envío: ${formatTotal(deliveryCost)} (${Math.ceil(deliveryDistance!)} km × $250/km)`
+                             ? '✅ ¡Envío gratis a tu zona!'
+                             : `🚚 Costo de envío: ${formatTotal(deliveryCost)}`
                            }
                          </span>
                        </div>
+                     )}
+
+                     {/* Summary of Totals inside Checkout Form */}
+                     {!isCalculatingDistance && (deliveryCost !== null || (geoError && deliveryDistance && deliveryDistance > 10)) && (
+                        <div className="mt-4 pt-4 border-t border-dashed border-border/50 flex flex-col gap-2">
+                           <div className="flex justify-between text-muted-foreground">
+                             <span>Subtotal productos:</span>
+                             <span>{formatTotal(total)}</span>
+                           </div>
+                           <div className="flex justify-between text-muted-foreground">
+                             <span>Costo de envío:</span>
+                             <span>
+                               {deliveryCost === 0 ? 'Gratis' : (deliveryDistance && deliveryDistance > 10 ? 'No disponible' : formatTotal(deliveryCost!))}
+                             </span>
+                           </div>
+                           {(deliveryCost !== null) && (
+                              <div className="flex justify-between font-black text-xl mt-2 pt-2 border-t border-border/20">
+                                <span>TOTAL A ABONAR:</span>
+                                <span className="text-primary">{formatTotal(grandTotal)}</span>
+                              </div>
+                           )}
+                        </div>
                      )}
                   </div>
                 </div>
@@ -610,7 +602,7 @@ ${itemsText}
                   ))}
                   {formData.deliveryMethod === 'Delivery' && (
                     <div className="flex justify-between text-[16px] text-muted-foreground mt-2">
-                      <span className="flex-1 pr-2">Costo de Envío</span>
+                      <span className="flex-1 pr-2">Costo de Envío ({deliveryDistance} km)</span>
                       <span className="font-bold text-foreground">{deliveryCost === 0 ? 'Gratis' : (deliveryCost ? formatTotal(deliveryCost) : '-')}</span>
                     </div>
                   )}
@@ -631,7 +623,7 @@ ${itemsText}
                     <span className="text-sm text-muted-foreground font-bold">Método y Dirección</span>
                     <span className="font-bold text-lg">{formData.deliveryMethod}</span>
                     {formData.deliveryMethod === 'Delivery' && (
-                        <span className="font-semibold text-muted-foreground">{formData.street} {formData.number}, {formData.neighborhood}</span>
+                        <span className="font-semibold text-muted-foreground">{formData.address}</span>
                     )}
                   </div>
                   
@@ -688,11 +680,12 @@ ${itemsText}
             </>
           )}
 
-          {step === 'form' && (
+           {step === 'form' && (
             <button
               onClick={() => handleFormSubmit()}
               type="button"
-              className="w-full btn-primary-market text-[18px] rounded-xl"
+              disabled={formData.deliveryMethod === 'Delivery' && (deliveryCost === null || (deliveryDistance !== null && deliveryDistance > 10))}
+              className="w-full btn-primary-market text-[18px] rounded-xl disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
             >
               <span>Revisar pedido</span>
             </button>

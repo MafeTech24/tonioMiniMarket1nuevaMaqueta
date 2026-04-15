@@ -7,6 +7,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 
 import imgPolloEntero from "../assets/products/pollo_entero_1775090313623.png";
@@ -20,7 +21,8 @@ const ofertas = [
     nombre: "Promo Tarta", 
     antes: "$7.500", 
     ahora: "$6.000", 
-    desc: "Combo ideal: 1 Pascualina San Vicente + 200g Jamón Cocido + 200g Queso Cremoso + 2 Huevos. ¡Todo listo para cocinar en familia!", 
+    desc: "¡Todo para una tarta en familia! Incluye: 1 Pascualina San Vicente + 200g Jamón Cocido feteado + 200g Queso Cremoso + 2 Huevos frescos. Una promo completa para preparar una tarta casera deliciosa. Ideal para el almuerzo o cena familiar.", 
+    img: imgPromoTarta1,
     images: [imgPromoTarta1, imgPromoTarta2, imgPromoTarta3],
     stock: 10,
     categoria: "Almacén"
@@ -52,6 +54,18 @@ const Ofertas = () => {
   );
   const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
   const [modalQuantity, setModalQuantity] = useState<number>(1);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -90,30 +104,8 @@ const Ofertas = () => {
           <div key={o.nombre} className="card-market p-6 relative flex flex-col h-full overflow-hidden cursor-pointer group" onClick={() => setSelectedOffer(o)}>
             <span className="badge-offer absolute top-4 right-4 z-10">OFERTA</span>
             
-            <div className="w-full h-48 sm:h-56 mb-4 rounded-md overflow-hidden relative bg-white">
-              {'images' in o ? (
-                <Carousel className="w-full h-full group/carousel">
-                  <CarouselContent className="h-full -ml-0">
-                    {o.images.map((img: string, idx: number) => (
-                      <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                        <img src={img} alt={`${o.nombre} ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
-                    <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                      <CarouselPrevious className="static translate-y-0 bg-white/90 hover:bg-white z-40 opacity-100 sm:opacity-0 sm:group-hover/carousel:opacity-100 transition-opacity h-10 w-10" />
-                    </div>
-                    <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                      <CarouselNext className="static translate-y-0 bg-white/90 hover:bg-white z-40 opacity-100 sm:opacity-0 sm:group-hover/carousel:opacity-100 transition-opacity h-10 w-10" />
-                    </div>
-                  </div>
-                </Carousel>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <img src={(o as any).img} alt={o.nombre} className="w-full h-full object-cover" loading="lazy" />
-                </div>
-              )}
+            <div className="w-full h-48 sm:h-56 mb-4 rounded-md overflow-hidden relative bg-white flex items-center justify-center">
+              <img src={(o as any).img} alt={o.nombre} className="w-full h-full object-cover" loading="lazy" />
             </div>
             
             <div className="flex-1 flex flex-col pt-2 text-center">
@@ -131,7 +123,7 @@ const Ofertas = () => {
       {selectedOffer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setSelectedOffer(null)} />
-          <div className="relative bg-white w-full max-w-[98%] sm:max-w-[90%] md:max-w-4xl rounded-[12px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[92vh] md:max-h-[85vh]">
+          <div className="relative bg-white w-[95%] sm:max-w-[90%] md:max-w-4xl rounded-[12px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[92vh] md:max-h-[85vh]">
             <button 
               onClick={() => setSelectedOffer(null)} 
               className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur rounded-full hover:bg-white transition-colors border shadow-sm text-gray-700"
@@ -140,25 +132,43 @@ const Ofertas = () => {
               <X size={24} />
             </button>
             
-            <div className="w-full md:w-1/2 bg-[#FAFAFA] p-[12px] flex items-center justify-center min-h-[200px] sm:min-h-[260px] md:min-h-0 border-b md:border-b-0 md:border-r border-[#e0e0e0] max-h-[40vh] md:max-h-none relative">
+            <div className="w-full md:w-1/2 bg-[#FAFAFA] p-[12px] flex items-center justify-center min-h-[250px] sm:min-h-[300px] md:min-h-0 border-b md:border-b-0 md:border-r border-[#e0e0e0] max-h-[40vh] md:max-h-none relative">
               {'images' in selectedOffer ? (
-                <Carousel className="w-full h-full">
-                  <CarouselContent>
-                    {selectedOffer.images.map((img: string, idx: number) => (
-                      <CarouselItem key={idx} className="flex items-center justify-center">
-                        <img src={img} alt={selectedOffer.nombre} className="w-full h-full object-contain max-h-[36vh] md:max-h-none" />
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-                    <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                      <CarouselPrevious className="static translate-y-0 bg-white/80 hover:bg-white z-40 h-12 w-12" />
+                <div className="w-full h-full flex flex-col">
+                  <Carousel setApi={setApi} className="w-full flex-1">
+                    <CarouselContent className="h-full">
+                      {selectedOffer.images.map((img: string, idx: number) => (
+                        <CarouselItem key={idx} className="flex items-center justify-center">
+                          <img src={img} alt={selectedOffer.nombre} className="w-full h-full object-contain max-h-[30vh] md:max-h-[50vh]" />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
+                      <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                        <CarouselPrevious className="static translate-y-0 bg-white/80 hover:bg-white z-40 h-10 w-10 shadow-md border-none" />
+                      </div>
+                      <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                        <CarouselNext className="static translate-y-0 bg-white/80 hover:bg-white z-40 h-10 w-10 shadow-md border-none" />
+                      </div>
                     </div>
-                    <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                    <CarouselNext className="static translate-y-0 bg-white/80 hover:bg-white z-40 h-12 w-12" />
+                  </Carousel>
+                  
+                  {/* Dots */}
+                  {count > 1 && (
+                    <div className="flex justify-center gap-2 mt-4 pb-2">
+                      {Array.from({ length: count }).map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => api?.scrollTo(i)}
+                          className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                            current === i ? "bg-[#CC0000] w-6" : "bg-gray-300 hover:bg-gray-400"
+                          }`}
+                          aria-label={`Ir a imagen ${i + 1}`}
+                        />
+                      ))}
                     </div>
-                  </div>
-                </Carousel>
+                  )}
+                </div>
               ) : (
                 <img src={(selectedOffer as any).img} alt={selectedOffer.nombre} className="w-full h-full object-contain max-h-[36vh] md:max-h-none" />
               )}
@@ -177,8 +187,8 @@ const Ofertas = () => {
                 <div className="h-[1px] bg-[#e0e0e0] w-full mb-6" />
                 
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-green-600 font-bold">
-                    ✓ Disponible · {selectedOffer.stock} unidades
+                  <span className="text-[#2E7D32] font-bold">
+                    Disponible · {selectedOffer.stock} unidades
                   </span>
                 </div>
                 
@@ -196,7 +206,8 @@ const Ofertas = () => {
                 <div className="flex items-center justify-center gap-4 bg-white border border-[#e0e0e0] rounded-xl p-1 w-full max-w-[240px] mx-auto shadow-sm">
                   <button
                     onClick={() => setModalQuantity(Math.max(1, modalQuantity - 1))}
-                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#555555] hover:bg-[#F5F5F5] rounded-lg transition-colors"
+                    disabled={modalQuantity <= 1}
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#555555] hover:bg-[#F5F5F5] rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                   >
                     <Minus size={20} />
                   </button>
@@ -205,7 +216,8 @@ const Ofertas = () => {
                   </span>
                   <button
                     onClick={() => setModalQuantity(Math.min(selectedOffer.stock, modalQuantity + 1))}
-                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#555555] hover:bg-[#F5F5F5] rounded-lg transition-colors"
+                    disabled={modalQuantity >= selectedOffer.stock}
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#555555] hover:bg-[#F5F5F5] rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                   >
                     <Plus size={20} />
                   </button>
