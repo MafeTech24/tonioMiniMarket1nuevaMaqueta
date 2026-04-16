@@ -15,8 +15,22 @@ import imgPackAlmacen from "../assets/products/pack_almacen_1775092426601.png";
 import imgPromoTarta1 from "../assets/products/promoTarta1.png";
 import imgPromoTarta2 from "../assets/products/promoTarta2.png";
 import imgPromoTarta3 from "../assets/products/promoTarta3.png";
+import imgPromoHamburguesa1 from "../assets/products/promoHamburguesa1.png";
+import imgPromoHamburguesa2 from "../assets/products/promoHamburguesa2.png";
+import imgPromoHamburguesa3 from "../assets/products/promoHamburguesa3.png";
+import imgPromoHamburguesa4 from "../assets/products/promoHamburguesa4.png";
 
 const ofertas = [
+  { 
+    nombre: "Promo Hamburguesas Paty", 
+    antes: "$8.000", 
+    ahora: "$6.500", 
+    desc: "¡La hamburguesada perfecta en casa! Incluye: 4 Hamburguesas Paty Express + 4 Panes de hamburguesa + 1 Mayonesa Hellmann's 125g + 1 Mostaza o Ketchup Danica 60g. Todo listo para armar las mejores hamburguesas caseras. Ideal para el fin de semana con toda la familia.", 
+    img: imgPromoHamburguesa1,
+    images: [imgPromoHamburguesa1, imgPromoHamburguesa2, imgPromoHamburguesa3, imgPromoHamburguesa4],
+    stock: 12,
+    categoria: "Almacén"
+  },
   { 
     nombre: "Promo Tarta", 
     antes: "$7.500", 
