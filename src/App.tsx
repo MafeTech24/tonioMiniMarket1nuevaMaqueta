@@ -7,6 +7,8 @@ import { CartProvider } from "./context/CartContext.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
+import Comprobante from "./pages/Comprobante.tsx";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -18,6 +20,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/comprobante/:numeroPedido" element={<Comprobante />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -3,6 +3,7 @@ import html2canvas from "html2canvas";
 import { ShoppingCart, Plus, Minus, Trash2, MessageCircle, ArrowLeft, CheckCircle2, MapPin, Download } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { useCart } from "@/context/CartContext";
+import { supabase } from '@/lib/supabase'
 
 const OWNER_PHONE = "5493512005107";
 const STORE_LAT = -31.4028;
@@ -181,7 +182,9 @@ ${commonMessage}
 💳 *Pago:* ${formData.paymentMethod}
 👤 *Cliente:* ${formData.name}
 📱 *Teléfono:* ${formData.phone}
-📝 *Notas:* ${formData.notes || "Sin notas"}`;
+📝 *Notas:* ${formData.notes || "Sin notas"}
+
+📋 *Comprobante:* https://tonionuevamaqueta.vercel.app/comprobante/${orderNumber}`;
 
     const customerMessage = `✅ *¡Pedido confirmado! #${orderNumber}*
 Hola ${formData.name}, recibimos tu pedido correctamente.
@@ -201,6 +204,40 @@ ${commonMessage}
 
     const ownerWaLink = `https://wa.me/${OWNER_PHONE}?text=${encodeURIComponent(ownerMessage)}`;
     const customerWaLink = `https://wa.me/${finalCustomerPhone}?text=${encodeURIComponent(customerMessage)}`;
+
+    try {
+      const { error } = await supabase
+        .from('pedidos')
+        .insert({
+          numero_pedido: orderNumber,
+          cliente_nombre: formData.name,
+          cliente_telefono: formData.phone,
+          productos: cart.map(item => ({
+            nombre: item.nombre,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            subtotal: item.precio * item.cantidad
+          })),
+          subtotal: total,
+          costo_envio: deliveryCost ?? 0,
+          total: grandTotal,
+          calle: formData.street,
+          piso_dpto: formData.floor,
+          barrio: formData.neighborhood,
+          direccion_completa: [formData.street, formData.floor, formData.neighborhood]
+            .filter(Boolean).join(', '),
+          metodo_entrega: formData.deliveryMethod,
+          metodo_pago: formData.paymentMethod,
+          notas: formData.notes || null,
+          estado: 'pendiente'
+        })
+
+      if (error) {
+        console.error('Error guardando pedido en Supabase:', error)
+      }
+    } catch (err) {
+      console.error('Error de conexión con Supabase:', err)
+    }
 
     window.open(ownerWaLink, "_blank");
     
